@@ -1,7 +1,13 @@
 import { generateResumePdf } from '../services/pdfService.js'
 
 export async function exportResumePdf(req, res) {
-  const { data } = req.body
+  let data = req.body?.data
+
+  // formData sends strings, parse if needed
+  if (typeof data === 'string') {
+    try { data = JSON.parse(data) } catch {}
+  }
+
   if (!data || !data.name) {
     return res.status(400).json({ message: '缺少简历数据' })
   }

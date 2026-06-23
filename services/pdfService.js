@@ -12,14 +12,22 @@ export function generateResumePdf(data) {
   doc.on('data', b => buffers.push(b))
 
   // Register Chinese font
-  const cnFont = 'C:\\Windows\\Fonts\\simhei.ttf'
-  if (fs.existsSync(cnFont)) {
-    doc.registerFont('Chinese', cnFont)
-  } else {
-    const localFont = path.join(process.cwd(), 'fonts', 'simhei.ttf')
-    if (fs.existsSync(localFont)) {
-      doc.registerFont('Chinese', localFont)
+  const candidates = [
+    path.join(process.cwd(), 'fonts', 'simhei.ttf'),
+    path.join(process.cwd(), 'fonts', 'NotoSansSC-Regular.ttf'),
+    '/usr/share/fonts/truetype/noto/NotoSansSC-Regular.ttf',
+    'C:\\Windows\\Fonts\\simhei.ttf'
+  ]
+  let found = false
+  for (const fp of candidates) {
+    if (fs.existsSync(fp)) {
+      doc.registerFont('Chinese', fp)
+      found = true
+      break
     }
+  }
+  if (!found) {
+    console.warn('No Chinese font found, PDF may show garbled text')
   }
 
   const { summary, education, experience, projects, skills, name } = data
