@@ -1,5 +1,8 @@
 import express from 'express'
 import cors from 'cors'
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import config from './config/index.js'
 import { aiLimiter } from './middleware/rateLimit.js'
 import { flush as flushStore } from './services/localStore.js'
@@ -64,14 +67,14 @@ app.get('/health', (req, res) => {
   })
 })
 
-// Root route: the share link is opened directly in a browser, so give it a
-// readable service card instead of a bare 404.
-app.get('/', (req, res) => {
+// Machine-readable service index. Lives at /api so that / can serve the web app.
+app.get('/api', (req, res) => {
   res.json({
     name: 'AI 求职助手 · 服务端 API',
     status: 'running',
     uptime: Math.round(process.uptime()),
     health: '/health',
+    web: '/',
     endpoints: [
       'POST /api/auth/login',
       'POST /api/resume/parse',
@@ -106,6 +109,24 @@ app.use('/api/history', historyRoutes)
 app.use('/api/pdf', pdfRoutes)
 app.use('/api/recommend', recommendRoutes)
 app.use('/api/salary', salaryRoutes)
+
+// Static web app (public/). Mounted after every /api route so the API always
+// wins, and before the JSON 404 fallback so real files get served.
+// Same origin also removes the need for CORS on the bundled web client.
+const publicDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'public')
+if (fs.existsSync(path.join(publicDir, 'index.html'))) {
+  app.use(express.static(publicDir, {
+    index: 'index.html',
+    maxAge: '1h',
+    setHeaders(res, filePath) {
+      if (filePath.endsWith('index.html')) res.setHeader('Cache-Control', 'no-store')
+    }
+  }))
+  // 非 /api 的未知路径回退到单页入口，浏览器直接刷新子路由时不会 404
+  app.get(/^\/(?!api\/|health).*/, (req, res) => {
+    res.sendFile(path.join(publicDir, 'index.html'))
+  })
+}
 
 // 404 fallback for unknown API paths (keeps JSON contract consistent)
 app.use((req, res) => {
