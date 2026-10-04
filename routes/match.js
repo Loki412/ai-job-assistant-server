@@ -1,9 +1,11 @@
 import { Router } from 'express'
-import authMiddleware from '../middleware/auth.js'
-import { analyzeMatch, analyzeMatchText } from '../controllers/matchController.js'
+import { optionalAuth } from '../middleware/auth.js'
+import { analyzeMatchText } from '../controllers/matchController.js'
 
 const router = Router()
 
-router.post('/analyze', analyzeMatchText)
+// Public endpoint (called before login by the client), so auth is optional:
+// a valid token enriches the result with history, an absent one still works.
+router.post('/analyze', optionalAuth, analyzeMatchText)
 
 export default router

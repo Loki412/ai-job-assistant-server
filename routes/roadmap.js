@@ -1,9 +1,10 @@
 import { Router } from 'express'
-import authMiddleware from '../middleware/auth.js'
-import { generateRoadmap, generateRoadmapText } from '../controllers/roadmapController.js'
+import { optionalAuth } from '../middleware/auth.js'
+import { generateRoadmapText } from '../controllers/roadmapController.js'
 
 const router = Router()
 
-router.post('/generate', generateRoadmapText)
+// Public endpoint, auth optional — see routes/match.js for the rationale.
+router.post('/generate', optionalAuth, generateRoadmapText)
 
 export default router

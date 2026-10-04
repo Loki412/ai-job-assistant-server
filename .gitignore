@@ -2,6 +2,11 @@ node_modules
 .env
 uploads/*
 !uploads/.gitkeep
+
+# Runtime state written by services/localStore.js — never commit user data
+data/
+*.corrupt-*
+
 *.log
 dist
 !fonts/**
